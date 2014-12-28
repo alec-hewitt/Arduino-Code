@@ -1,6 +1,6 @@
 //toggles an LED when a button is pressed
 
-int LED = 12;
+int LED = 10;
 int BUTTON = 4;
 
 void setup(){
