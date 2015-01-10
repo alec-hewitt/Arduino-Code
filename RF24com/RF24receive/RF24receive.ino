@@ -4,16 +4,16 @@
 Connections:
   -
   Receiver:
-  1 - GND
+  1 - GND - GRN
   2 - VCC - 3.3V NOT 5V
-  3 - CE - IO pin 9
-  4 - CSN - IO pin 10
-  5 - SCK - IO pin 13
-  6 - MOSI - IO pin 11
-  7 - MISO - IO pin 12
+  3 - CE - IN pin 9
+  4 - CS - IN pin 10
+  5 - SCK - IN pin 13
+  6 - MOSI - IN 11
+  7 - MISO - OUT 12
   8 - unused
   -
-  Joystick:
+  T:
   GND - Arduino GND
   VCC - Arduino +5V
   X pot - Arduino A0
@@ -27,8 +27,13 @@ Connections:
 #include <RF24_config.h>
 
 //connection definitions
-#define CE_PIN 9
-#define CSN_PIN 10
+#define SCK 13
+#define CE 9
+#define CS 10
+#define MISO 12
+#define MOSI 11
+#define IRQ 2
+
 #define ANALOG1 A0
 #define ANALOG2 A1
 
@@ -36,7 +41,7 @@ Connections:
 const uint64_t pipe = 0xE8E8F0F0E1LL;
 
 //creates a radio
-RF24 radio(CE_PIN, CSN_PIN);
+RF24 radio(CE, CS);
 
 //integer array to hold joystick readings
 int analog_data[2];
@@ -45,6 +50,25 @@ void setup(){
   Serial.begin(9600);
   delay(1000);
   Serial.println("Nrf24L01 Receiver Starting");
+  
+  //pinmodes
+  pinMode(SCK, OUTPUT);
+  pinMode(MISO, INPUT);
+  pinMode(MOSI, OUTPUT);
+  pinMode(CS, OUTPUT);
+  pinMode(CE, OUTPUT);
+  //pinMode(IRQ, INPUT_PIULLUP);
+  
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setDataMode(SPI_MODE0);
+  SPI.setClockDivider(SPI_CLOCK_DIV2);
+  
+  //set RX mode pins high for receiving
+  digitalWrite(CE, HIGH);
+  digitalWrite(CS, HIGH);
+  
+  SPI.begin();
+  
   //start radio
   radio.begin();
   //open pipeline for data reception
@@ -62,10 +86,7 @@ void loop(){
       //fetch data
       done = radio.read(analog_data, sizeof(analog_data));
       //debug print data
-      Serial.print("analog 1 data = ");
       Serial.print(analog_data[0]);
-      Serial.print("analog 2 data = ");
-      Serial.print(analog_data[1]);
     }
   } else { //if radio is not available
      Serial.print("No radio available"); 
